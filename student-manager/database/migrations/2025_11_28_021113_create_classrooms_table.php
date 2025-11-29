@@ -11,12 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('classrooms', function (Blueprint $table) {
+       Schema::create('classrooms', function (Blueprint $table) {
         $table->id();
-        $table->string('name')->unique(); // Tên lớp (VD: CNTT-K15)
-        $table->string('department_name')->nullable(); // Khoa
+        $table->string('name');
+        $table->unsignedBigInteger('teacher_id')->nullable(); 
+        
+        // Logic Sĩ số
+        $table->integer('max_quantity')->default(40);
+        $table->integer('current_quantity')->default(0);
+        
+        $table->tinyInteger('status')->default(1);
         $table->timestamps();
-        });
+    });
     }
 
     /**
