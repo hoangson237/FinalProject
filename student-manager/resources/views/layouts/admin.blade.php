@@ -44,6 +44,7 @@
             font-size: 0.95rem;
         }
 
+        /* Class active sẽ được thêm tự động nhờ code Blade */
         .sidebar nav a:hover, .sidebar nav a.active {
             background: #0d6efd;
             color: white;
@@ -81,18 +82,31 @@
                     <i class="fas fa-university me-2"></i> QUẢN TRỊ VIÊN
                 </div>
                 <nav class="mt-2">
-                    <a href="{{ route('admin.dashboard') }}" class="active">
+                    {{-- 1. Link Tổng quan (Chính xác route dashboard) --}}
+                    <a href="{{ route('admin.dashboard') }}" 
+                       class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <i class="fas fa-chart-pie"></i> Tổng quan
                     </a>
-                    <a href="{{ route('admin.classes.index') }}" class="">
+
+                    {{-- 2. Link Quản lý Lớp học (Sử dụng dấu * để active cho cả trang con như create, edit) --}}
+                    <a href="{{ route('admin.classes.index') }}" 
+                       class="{{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">
                         <i class="fas fa-chalkboard"></i> Quản lý Lớp học
                     </a>
-                    <a href="{{ route('admin.teachers.index') }}" class="">
+
+                    {{-- 3. Link Quản lý Giáo viên --}}
+                    <a href="{{ route('admin.teachers.index') }}" 
+                       class="{{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
                         <i class="fas fa-chalkboard-teacher"></i> Quản lý Giáo viên
                     </a>
-                    <a href="{{ route('admin.students.index') }}" class="">
+
+                    {{-- 4. Link Quản lý Sinh viên --}}
+                    <a href="{{ route('admin.students.index') }}" 
+                       class="{{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
                         <i class="fas fa-user-graduate"></i> Quản lý Sinh viên
                     </a>
+
+                    {{-- Nút Đăng xuất --}}
                     <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" 
                        class="text-danger mt-3" style="border-top: 1px solid #495057;">
                         <i class="fas fa-sign-out-alt"></i> Đăng xuất
@@ -100,7 +114,6 @@
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
                 </nav>
             </div>
-
             <div class="col-md-10 ms-auto p-0 d-flex flex-column min-vh-100">
                 
                 <div class="top-bar sticky-top shadow-sm">
@@ -113,18 +126,19 @@
                     <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" data-bs-toggle="dropdown">
                             <div class="text-end me-3 d-none d-sm-block">
-                                <div class="fw-bold" style="font-size: 0.95rem;">{{ Auth::user()->name }}</div>
+                                {{-- Kiểm tra nếu user đã đăng nhập thì mới hiển thị tên --}}
+                                <div class="fw-bold" style="font-size: 0.95rem;">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</div>
                                 <div class="text-muted small">Administrator</div>
                             </div>
                             
-                            @if(Auth::user()->avatar)
+                            @if(Auth::check() && Auth::user()->avatar)
                                 <img src="{{ asset('storage/'.Auth::user()->avatar) }}" 
                                      class="rounded-circle border shadow-sm" 
                                      style="width: 38px; height: 38px; object-fit: cover;">
                             @else
                                 <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center fw-bold shadow-sm" 
                                      style="width: 38px; height: 38px; font-size: 1rem;">
-                                    {{ substr(Auth::user()->name, 0, 1) }}
+                                     {{ Auth::check() ? substr(Auth::user()->name, 0, 1) : 'G' }}
                                 </div>
                             @endif
                         </a>
@@ -157,7 +171,7 @@
                 </footer>
 
             </div>
-        </div>
+            </div>
     </div>
 </body>
 </html>

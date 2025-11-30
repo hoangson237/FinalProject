@@ -2,10 +2,12 @@
 
 @section('content')
 <div class="card shadow border-0">
+    {{-- Header và Nút Thêm mới --}}
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold text-primary" style="font-size: 1.25rem;">
             <i class="fas fa-chalkboard me-2"></i>Quản lý Lớp học phần
         </h5>
+        {{-- 👇 QUAN TRỌNG: Đã sửa thành route số ít để khớp với web.php --}}
         <a href="{{ route('admin.class.create') }}" class="btn btn-primary btn-sm shadow-sm" style="font-size: 1rem;">
             <i class="fas fa-plus-circle me-1"></i> Thêm lớp mới
         </a>
@@ -13,6 +15,7 @@
     
     <div class="card-body bg-light">
         
+        {{-- Form Lọc Tìm kiếm --}}
         <form action="" method="GET" class="row g-3 mb-4 p-3 bg-white rounded shadow-sm mx-1">
             <div class="col-md-4">
                 <input type="text" name="keyword" class="form-control" 
@@ -39,6 +42,7 @@
                 <button class="btn btn-dark w-100 fw-bold" type="submit" style="font-size: 1rem;">Lọc</button>
             </div>
             
+            {{-- Nút Xóa bộ lọc --}}
             @if(request('keyword') || request('teacher_id') || request('status'))
                 <div class="col-12 ps-3 mt-2">
                     <a href="{{ route('admin.classes.index') }}" class="text-danger text-decoration-none" style="font-size: 0.9rem;">
@@ -48,6 +52,7 @@
             @endif
         </form>
 
+        {{-- Thông báo Success --}}
         @if(session('success')) 
             <div class="alert alert-success alert-dismissible fade show shadow-sm" style="font-size: 1rem;">
                 <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
@@ -55,6 +60,7 @@
             </div> 
         @endif
 
+        {{-- Bảng Danh sách --}}
         <div class="card border-0 shadow-sm">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -80,10 +86,19 @@
                             <td>
                                 @if($class->teacher)
                                     <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-light d-flex justify-content-center align-items-center me-2 text-primary fw-bold border" 
-                                             style="width: 40px; height: 40px; font-size: 1.2rem;">
-                                            {{ substr($class->teacher->name, 0, 1) }}
-                                        </div>
+                                        {{-- Hiển thị Avatar GV --}}
+                                        @if($class->teacher->avatar)
+                                            <img src="{{ asset('storage/' . $class->teacher->avatar) }}" 
+                                                 alt="{{ $class->teacher->name }}"
+                                                 class="rounded-circle me-2 border shadow-sm"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                        @else
+                                            <div class="rounded-circle bg-light d-flex justify-content-center align-items-center me-2 text-primary fw-bold border" 
+                                                 style="width: 40px; height: 40px; font-size: 1.2rem;">
+                                                {{ substr($class->teacher->name, 0, 1) }}
+                                            </div>
+                                        @endif
+
                                         <div>
                                             <div class="fw-bold text-dark" style="font-size: 1rem;">{{ $class->teacher->name }}</div>
                                             <div class="text-muted" style="font-size: 0.9rem;">{{ $class->teacher->email }}</div>
@@ -94,6 +109,7 @@
                                 @endif
                             </td>
                             
+                            {{-- Cột Sĩ số (Progress bar) --}}
                             <td class="text-center" style="width: 200px;">
                                 @php 
                                     $percent = ($class->max_quantity > 0) ? ($class->current_quantity / $class->max_quantity) * 100 : 100;
@@ -108,6 +124,7 @@
                                 </div>
                             </td>
 
+                            {{-- Cột Trạng thái --}}
                             <td class="text-center">
                                 @if($class->status == 1)
                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3" style="font-size: 0.9rem;">Mở</span>
@@ -116,10 +133,13 @@
                                 @endif
                             </td>
                             
+                            {{-- Cột Hành động (Sửa/Xóa) --}}
                             <td class="text-center">
+                                {{-- 👇 Đã sửa thành route số ít (class.edit) --}}
                                 <a href="{{ route('admin.class.edit', $class->id) }}" class="btn btn-light btn-sm text-primary shadow-sm border" title="Sửa">
                                     <i class="fas fa-edit fa-lg"></i>
                                 </a>
+                                {{-- 👇 Đã sửa thành route số ít (class.destroy) --}}
                                 <form action="{{ route('admin.class.destroy', $class->id) }}" method="POST" class="d-inline" onsubmit="return confirm('CẢNH BÁO: Xóa lớp sẽ xóa hết đăng ký của SV!\nBạn chắc chắn chứ?');">
                                     @csrf @method('DELETE')
                                     <button class="btn btn-light btn-sm text-danger shadow-sm border ms-1" title="Xóa">
@@ -141,6 +161,7 @@
             </div>
         </div>
         
+        {{-- Phân trang --}}
         <div class="card-footer bg-white py-3 border-top-0">
             <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
                 <div class="text-muted" style="font-size: 1rem;">
