@@ -58,8 +58,12 @@
                 <hr>
                 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="{{ route('admin.classes.index') }}" class="btn btn-secondary">Hủy</a>
-                    <button type="submit" class="btn btn-warning">Cập nhật</button>
+                    <a href="{{ route('admin.classes.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                    <button type="submit" class="btn btn-warning fw-bold">
+                        <i class="fas fa-save"></i> Cập nhật
+                    </button>
                 </div>
             </form>
         </div>

@@ -31,8 +31,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/class/delete/{id}', [AdminController::class, 'destroy'])->name('class.destroy'); // Hành động Xóa
     // CRUD SINH VIÊN (Thêm dòng này)
     Route::resource('students', AdminStudentController::class);
+    
+
     // 3. CRUD GIÁO VIÊN (Teacher Management) <--- DÒNG BẠN CẦN CHẮC CHẮN CÓ
     Route::resource('teachers', AdminTeacherController::class);
+    
     
     // 4. ROUTE EXCEL (Advanced)
     Route::get('students/export', [AdminStudentController::class, 'export'])->name('students.export');
@@ -54,10 +57,11 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
 // --- KHU VỰC SINH VIÊN (Role = 0) ---
 Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
     
-    // Xem danh sách
-    Route::get('/register-class', [StudentController::class, 'index'])->name('register');
-    
-    // Hành động bấm nút đăng ký (Thêm dòng này)
-    Route::post('/register-action/{id}', [StudentController::class, 'store'])->name('postRegister');
+    // 1. Chức năng Đăng ký Lớp học
+    Route::get('/register-class', [StudentController::class, 'index'])->name('register'); // Xem danh sách
+    Route::post('/register-action/{id}', [StudentController::class, 'store'])->name('postRegister'); // Xử lý đăng ký
 
-});
+    // 2. Chức năng Lớp học của tôi (MỚI)
+    Route::get('/my-classes', [StudentController::class, 'myClasses'])->name('myClasses'); // Xem điểm/lịch sử
+    Route::delete('/cancel/{id}', [StudentController::class, 'cancel'])->name('cancel'); // Hủy đăng ký
+}); 

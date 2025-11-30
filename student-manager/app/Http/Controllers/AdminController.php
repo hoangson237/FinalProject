@@ -4,41 +4,61 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Classroom;
-use App\Models\User; 
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use App\Models\Registration; // <--- BẮT BUỘC CÓ DÒNG NÀY
 
 class AdminController extends Controller
 {
-    // --- MODULE: TỔNG QUAN (DASHBOARD) ---
-    
-    // 1. Trang Tổng quan (Chỉ hiện thống kê)
+    // --- MODULE 1: DASHBOARD (TỔNG QUAN) ---
     public function index()
     {
+        // 1. Thống kê số liệu cho 3 thẻ màu
         $stats = [
-            'students' => User::where('role', 0)->count(), 
-            'teachers' => User::where('role', 2)->count(), 
-            'classes' => Classroom::count(), 
+            'students' => User::where('role', 0)->count(),
+            'teachers' => User::where('role', 2)->count(),
+            'classes'  => Classroom::count(),
         ];
-        return view('admin.dashboard', compact('stats'));
+
+        // 2. Lấy 5 hoạt động đăng ký mới nhất (Để hiện bảng bên dưới)
+        $recent_registrations = Registration::with(['student', 'classroom'])
+                                ->latest()
+                                ->take(5)
+                                ->get();
+
+        return view('admin.dashboard', compact('stats', 'recent_registrations'));
     }
 
-    // --- MODULE: QUẢN LÝ LỚP HỌC (CRUD CLASSROOMS) ---
+    // --- MODULE 2: QUẢN LÝ LỚP HỌC (CRUD) ---
 
-    // 2. Trang Danh sách Lớp học (Đích đến của Menu "Quản lý Lớp học")
-    public function classList()
+    // Danh sách Lớp (Trang riêng)
+    public function classList(Request $request)
     {
-        $classrooms = Classroom::with('teacher')->latest()->paginate(10);
-        return view('admin.classes.index', compact('classrooms'));
+        $query = Classroom::with('teacher');
+
+        if ($request->has('keyword') && $request->keyword != '') {
+            $query->where('name', 'LIKE', "%{$request->keyword}%");
+        }
+        if ($request->has('teacher_id') && $request->teacher_id != '') {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status', $request->status);
+        }
+
+        $classrooms = $query->latest()->paginate(10)->withQueryString();
+        $teachers = User::where('role', 2)->get();
+
+        return view('admin.classes.index', compact('classrooms', 'teachers'));
     }
 
-    // 3. Form Thêm mới 
+    // Form Thêm mới
     public function create()
     {
         $teachers = User::where('role', 2)->get(); 
         return view('admin.create', compact('teachers'));
     }
 
-    // 4. Lưu lớp mới (Store) - ĐÃ SỬA ĐÍCH ĐẾN REDIRECT
+    // Lưu lớp mới
     public function store(Request $request)
     {
         $request->validate([
@@ -57,11 +77,10 @@ class AdminController extends Controller
             'status' => 1
         ]);
 
-        // FIX: Chuyển hướng đến trang Danh sách Lớp học
         return redirect()->route('admin.classes.index')->with('success', 'Đã tạo lớp học thành công!');
     }
 
-    // 5. Form Sửa (Edit)
+    // Form Sửa
     public function edit($id)
     {
         $class = Classroom::findOrFail($id);
@@ -69,7 +88,7 @@ class AdminController extends Controller
         return view('admin.edit', compact('class', 'teachers'));
     }
 
-    // 6. Cập nhật (Update)
+    // Cập nhật
     public function update(Request $request, $id)
     {
         $class = Classroom::findOrFail($id);
@@ -77,7 +96,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required',
             'teacher_id' => 'required|exists:users,id',
-            'max_quantity' => 'required|integer|min:1|max:20' 
+            'max_quantity' => 'required|integer|min:1|max:20'
         ], [
             'max_quantity.max' => 'Sĩ số lớp không được vượt quá 20 người!'
         ]);
@@ -88,11 +107,10 @@ class AdminController extends Controller
             'max_quantity' => $request->max_quantity,
         ]);
 
-        // FIX: Chuyển hướng đến trang Danh sách Lớp học
         return redirect()->route('admin.classes.index')->with('success', 'Cập nhật lớp học thành công!');
     }
 
-    // 7. Xóa lớp (Destroy)
+    // Xóa lớp
     public function destroy($id)
     {
         $class = Classroom::findOrFail($id);

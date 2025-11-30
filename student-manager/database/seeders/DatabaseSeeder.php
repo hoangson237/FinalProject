@@ -9,54 +9,52 @@ use App\Models\Classroom;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // 1. Tạo ADMIN (Để quản lý hệ thống)
+        // MẬT KHẨU CHUNG CHO TẤT CẢ LÀ: 12345678 (8 số)
+        $password = Hash::make('12345678'); 
+
+        // 1. Tạo ADMIN
         User::create([
             'name' => 'Thầy Admin',
             'email' => 'admin@gmail.com',
-            'password' => Hash::make('123456'),
-            'role' => 1,      // Role 1 = Admin
+            'password' => $password, 
+            'role' => 1,
             'code' => 'ADM01',
             'status' => 1
         ]);
 
-        // 2. Tạo GIÁO VIÊN (Để chấm điểm & đứng lớp)
-        // Gán vào biến $gv để tí nữa lấy ID gán cho lớp học
+        // 2. Tạo GIÁO VIÊN
         $gv = User::create([
             'name' => 'Cô Giáo Thảo',
             'email' => 'teacher@gmail.com',
-            'password' => Hash::make('123456'),
-            'role' => 2,      // Role 2 = Giáo viên
+            'password' => $password,
+            'role' => 2,
             'code' => 'GV01',
             'status' => 1
         ]);
 
-        // 3. Tạo SINH VIÊN (Để test đăng ký học)
+        // 3. Tạo SINH VIÊN
         User::create([
             'name' => 'Em Sinh Viên A',
             'email' => 'student@gmail.com',
-            'password' => Hash::make('123456'),
-            'role' => 0,      // Role 0 = Sinh viên
+            'password' => $password,
+            'role' => 0,
             'code' => 'SV01',
             'status' => 1
         ]);
 
         // 4. Tạo LỚP HỌC MẪU
-        
-        // Lớp 1: Lớp bình thường (Còn 30 chỗ) -> Để test đăng ký thành công
+        // Lớp 1: Còn chỗ
         Classroom::create([
             'name' => 'Lập trình Laravel - K15',
-            'teacher_id' => $gv->id, // Lớp này do cô Thảo dạy
+            'teacher_id' => $gv->id,
             'max_quantity' => 30,
             'current_quantity' => 0,
             'status' => 1
         ]);
 
-        // Lớp 2: Lớp đã đầy (Max = 0) -> Để test logic báo lỗi "Lớp đã đầy"
+        // Lớp 2: Đã đầy (Max = 0)
         Classroom::create([
             'name' => 'Lập trình Java - K15 (Full)',
             'teacher_id' => $gv->id,
@@ -65,13 +63,9 @@ class DatabaseSeeder extends Seeder
             'status' => 1
         ]);
         
-        // In ra màn hình console để bạn nhớ tài khoản
         echo "--------------------------------------\n";
-        echo "ĐÃ TẠO XONG DỮ LIỆU MẪU THÀNH CÔNG!\n";
-        echo "--------------------------------------\n";
-        echo "1. Admin:   admin@gmail.com   / 123456\n";
-        echo "2. GV:      teacher@gmail.com / 123456\n";
-        echo "3. SV:      student@gmail.com / 123456\n";
+        echo "ĐÃ RESET DỮ LIỆU THÀNH CÔNG!\n";
+        echo "Mật khẩu chung cho tất cả: 12345678\n";
         echo "--------------------------------------\n";
     }
 }

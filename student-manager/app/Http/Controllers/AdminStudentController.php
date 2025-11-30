@@ -5,56 +5,62 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Storage; // Thư viện để xóa ảnh
+use App\Exports\StudentsExport;
+
 
 class AdminStudentController extends Controller
 {
-    // 1. Danh sách sinh viên
-   public function index(Request $request) // <--- Nhớ thêm Request $request
-{
-    // 1. Khởi tạo query lấy Sinh viên (Role 0)
-    $query = User::where('role', 0);
+    // 1. Danh sách
+    public function index(Request $request)
+    {
+        $query = User::where('role', 0); // Lấy SV
 
-    // 2. Nếu có từ khóa tìm kiếm -> Lọc theo Tên hoặc Mã hoặc Email
-    if ($request->has('keyword') && $request->keyword != '') {
-        $keyword = $request->keyword;
-        $query->where(function($q) use ($keyword) {
-            $q->where('name', 'LIKE', "%{$keyword}%")
-              ->orWhere('email', 'LIKE', "%{$keyword}%")
-              ->orWhere('code', 'LIKE', "%{$keyword}%");
-        });
+        if ($request->has('keyword') && $request->keyword != '') {
+            $keyword = $request->keyword;
+            $query->where(function($q) use ($keyword) {
+                $q->where('name', 'LIKE', "%{$keyword}%")
+                  ->orWhere('email', 'LIKE', "%{$keyword}%")
+                  ->orWhere('code', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        $students = $query->latest()->paginate(2)->withQueryString();
+        return view('admin.students.index', compact('students'));
     }
 
-    // 3. Sắp xếp & Phân trang (Giữ lại tham số tìm kiếm khi chuyển trang)
-    $students = $query->latest()->paginate(10)->withQueryString();
-
-    return view('admin.students.index', compact('students'));
-}
-
-    // 2. Form thêm mới
+    // 2. Form thêm
     public function create()
     {
         return view('admin.students.create');
     }
 
-    // 3. Lưu sinh viên mới (Có Upload ảnh)
+   // 3. Lưu mới (Store) - CÓ VALIDATE TIẾNG VIỆT
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'code' => 'required|unique:users',
-            'avatar' => 'nullable|image|max:2048' // Validate ảnh tối đa 2MB
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'code' => 'required|string|max:20|unique:users,code',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            // --- DỊCH TIẾNG VIỆT ---
+            'name.required' => 'Họ tên không được để trống!',
+            'email.required' => 'Email là bắt buộc!',
+            'email.email' => 'Định dạng email không đúng!',
+            'email.unique' => 'Email này đã có người khác sử dụng!',
+            'code.required' => 'Mã sinh viên là bắt buộc!',
+            'code.unique' => 'Mã sinh viên này đã tồn tại!',
+            'avatar.image' => 'File tải lên phải là hình ảnh!',
+            'avatar.max' => 'Ảnh quá lớn (Tối đa 2MB)!',
         ]);
 
         $data = $request->all();
-        $data['password'] = Hash::make('123456'); // Mặc định pass
-        $data['role'] = 0; // Role Sinh viên
+        $data['password'] = Hash::make('12345678'); 
+        $data['role'] = 0;
         $data['status'] = 1;
 
-        // Xử lý Upload Ảnh
         if ($request->hasFile('avatar')) {
-            // Lưu vào storage/app/public/avatars
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = $path;
         }
@@ -63,7 +69,6 @@ class AdminStudentController extends Controller
 
         return redirect()->route('admin.students.index')->with('success', 'Thêm sinh viên thành công!');
     }
-
     // 4. Form sửa
     public function edit($id)
     {
@@ -71,28 +76,37 @@ class AdminStudentController extends Controller
         return view('admin.students.edit', compact('student'));
     }
 
-    // 5. Cập nhật (Có xóa ảnh cũ thay ảnh mới)
+    // 5. Cập nhật (Update) - CÓ THÔNG BÁO TIẾNG VIỆT
     public function update(Request $request, $id)
     {
         $student = User::findOrFail($id);
 
+        // --- PHẦN SỬA: Thêm mảng thông báo tiếng Việt vào tham số thứ 2 ---
         $request->validate([
-            'name' => 'required',
-            // unique nhưng bỏ qua ID hiện tại
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,'.$id,
-            'code' => 'required|unique:users,code,'.$id,
-            'avatar' => 'nullable|image|max:2048'
+            'code' => 'required|string|max:20|unique:users,code,'.$id,
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            // --- CÁC DÒNG DỊCH TIẾNG VIỆT ---
+            'name.required' => 'Họ tên không được để trống!',
+            'email.required' => 'Email là bắt buộc!',
+            'email.email' => 'Định dạng email không đúng!',
+            'email.unique' => 'Email này đã có người khác sử dụng!',
+            'code.required' => 'Mã sinh viên là bắt buộc!',
+            'code.unique' => 'Mã sinh viên này đã tồn tại!',
+            'avatar.image' => 'File tải lên phải là hình ảnh!',
+            'avatar.max' => 'Ảnh quá lớn (Tối đa 2MB)!',
         ]);
+        // ------------------------------------------------------------------
 
         $data = $request->all();
 
-        // Xử lý ảnh: Nếu có upload ảnh mới
+        // Xử lý ảnh (Giữ nguyên)
         if ($request->hasFile('avatar')) {
-            // 1. Xóa ảnh cũ (nếu có)
             if ($student->avatar && Storage::disk('public')->exists($student->avatar)) {
                 Storage::disk('public')->delete($student->avatar);
             }
-            // 2. Lưu ảnh mới
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = $path;
         }
@@ -102,12 +116,18 @@ class AdminStudentController extends Controller
         return redirect()->route('admin.students.index')->with('success', 'Cập nhật thành công!');
     }
 
-    // 6. Xóa (Soft Delete)
+    // 6. Xóa (Destroy) - CÓ XÓA ẢNH VẬT LÝ
     public function destroy($id)
     {
         $student = User::findOrFail($id);
-        $student->delete(); // Soft delete (chỉ ẩn đi, không xóa thật)
         
-        return back()->with('success', 'Đã chuyển sinh viên vào thùng rác!');
+        // Xóa ảnh đại diện trong folder trước khi xóa user
+        if ($student->avatar && Storage::disk('public')->exists($student->avatar)) {
+            Storage::disk('public')->delete($student->avatar);
+        }
+
+        $student->delete(); 
+        
+        return back()->with('success', 'Đã xóa sinh viên và ảnh đại diện!');
     }
 }
