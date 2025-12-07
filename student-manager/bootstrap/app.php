@@ -3,8 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\CheckRole;
-use Illuminate\Support\Facades\Auth; // <--- Nhớ thêm dòng này
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,25 +14,27 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         
-        // 1. Khai báo Middleware phân quyền (Bạn đã làm)
+        // 1. Alias cho middleware role
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
 
-        // 2. XỬ LÝ LỖI LOOP: Điều hướng khi người dùng ĐÃ ĐĂNG NHẬP
-        // (Thay thế cho file RedirectIfAuthenticated cũ)
+        // 2. QUAN TRỌNG: CẤU HÌNH ĐÍCH ĐẾN KHI ĐÃ ĐĂNG NHẬP
+        // Đây là chỗ quyết định việc bạn bị đá về đâu nếu đã login rồi
         $middleware->redirectUsersTo(function () {
-            // Lấy role hiện tại
             $user = Auth::user();
             
-            // Nếu chưa lấy được user (lỗi session) thì về login
-            if (!$user) return '/login'; 
+            // Nếu lỗi session -> về login
+            if (!$user) return '/login';
 
-            $role = $user->role;
+            // Admin -> Dashboard
+            if ($user->role == 1) return '/admin/dashboard';
+            
+            // Giáo viên -> BẮT BUỘC VỀ DASHBOARD
+            if ($user->role == 2) return '/teacher/dashboard';
 
-            if ($role == 1) return '/admin/dashboard';
-            if ($role == 2) return '/teacher/classes';
-            if ($role == 0) return '/student/register-class';
+            // Sinh viên -> Đăng ký
+            if ($user->role == 0) return '/student/register-class';
 
             return '/';
         });

@@ -8,25 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-       Schema::create('classrooms', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
+        Schema::create('classrooms', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
 
-        // --- PHẦN ĐÃ SỬA ---
-        // Cũ: $table->unsignedBigInteger('teacher_id')->nullable();
-        // Mới (Chuẩn Pro): Dùng foreignId và constrained để tạo khóa ngoại thực sự.
-        // Tôi giữ lại nullable() để cho phép tạo lớp trước khi gán GV.
-        $table->foreignId('teacher_id')->nullable()->constrained('users'); // <--- ĐÃ SỬA Ở ĐÂY (Thêm ràng buộc)
-        
-        // Logic Sĩ số
-        // Cũ: $table->integer('max_quantity')->default(40);
-        // Mới: Sửa về 20 cho khớp DBML
-        $table->integer('max_quantity')->default(20); // <--- ĐÃ SỬA Ở ĐÂY (Về 20 theo DBML)
-        $table->integer('current_quantity')->default(0);
-        
-        $table->tinyInteger('status')->default(1);
-        $table->timestamps();
-    });
+            // [MAX PING] Teacher: Thêm onDelete cascade để khi xóa GV thì lớp cũng bay (hoặc set null tùy logic)
+            // Ở đây tôi giữ nullable theo ý bạn, nhưng thêm ràng buộc xóa.
+            $table->foreignId('teacher_id')
+                  ->nullable()
+                  ->constrained('users')
+                  ->onDelete('cascade'); 
+            
+            // Logic Sĩ số (Chuẩn DBML)
+            $table->integer('max_quantity')->default(20);
+            $table->integer('current_quantity')->default(0);
+            
+            $table->tinyInteger('status')->default(1);
+            
+            // [MAX PING] Thêm SoftDeletes cho lớp học (Phòng khi xóa nhầm lớp)
+            $table->softDeletes(); 
+            $table->timestamps();
+        });
     }
 
     public function down(): void

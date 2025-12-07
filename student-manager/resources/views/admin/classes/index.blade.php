@@ -7,7 +7,7 @@
         <h5 class="mb-0 fw-bold text-primary" style="font-size: 1.25rem;">
             <i class="fas fa-chalkboard me-2"></i>Quản lý Lớp học phần
         </h5>
-        {{-- 👇 QUAN TRỌNG: Đã sửa thành route số ít để khớp với web.php --}}
+        {{-- Nút thêm mới --}}
         <a href="{{ route('admin.class.create') }}" class="btn btn-primary btn-sm shadow-sm" style="font-size: 1rem;">
             <i class="fas fa-plus-circle me-1"></i> Thêm lớp mới
         </a>
@@ -109,7 +109,7 @@
                                 @endif
                             </td>
                             
-                            {{-- Cột Sĩ số (Progress bar) --}}
+                            {{-- Cột Sĩ số (Thanh Progress bar) --}}
                             <td class="text-center" style="width: 200px;">
                                 @php 
                                     $percent = ($class->max_quantity > 0) ? ($class->current_quantity / $class->max_quantity) * 100 : 100;
@@ -124,22 +124,31 @@
                                 </div>
                             </td>
 
-                            {{-- Cột Trạng thái --}}
+                            {{-- 👇 CỘT TRẠNG THÁI (ĐÃ SỬA LOGIC) --}}
                             <td class="text-center">
-                                @if($class->status == 1)
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3" style="font-size: 0.9rem;">Mở</span>
+                                @if($class->current_quantity >= $class->max_quantity)
+                                    {{-- 1. Nếu sĩ số hiện tại >= Max -> Bắt buộc hiện Đã đầy (Đỏ) --}}
+                                    <span class="badge bg-danger rounded-pill px-3" style="font-size: 0.9rem;">
+                                        <i class="fas fa-ban me-1"></i> Đã đầy
+                                    </span>
+                                @elseif($class->status == 1)
+                                    {{-- 2. Nếu chưa đầy và status = 1 -> Hiện Mở (Xanh) --}}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3" style="font-size: 0.9rem;">
+                                        Mở
+                                    </span>
                                 @else
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3" style="font-size: 0.9rem;">Đóng</span>
+                                    {{-- 3. Các trường hợp còn lại -> Đóng (Xám) --}}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3" style="font-size: 0.9rem;">
+                                        Đóng
+                                    </span>
                                 @endif
                             </td>
                             
-                            {{-- Cột Hành động (Sửa/Xóa) --}}
+                            {{-- Cột Hành động --}}
                             <td class="text-center">
-                                {{-- 👇 Đã sửa thành route số ít (class.edit) --}}
                                 <a href="{{ route('admin.class.edit', $class->id) }}" class="btn btn-light btn-sm text-primary shadow-sm border" title="Sửa">
                                     <i class="fas fa-edit fa-lg"></i>
                                 </a>
-                                {{-- 👇 Đã sửa thành route số ít (class.destroy) --}}
                                 <form action="{{ route('admin.class.destroy', $class->id) }}" method="POST" class="d-inline" onsubmit="return confirm('CẢNH BÁO: Xóa lớp sẽ xóa hết đăng ký của SV!\nBạn chắc chắn chứ?');">
                                     @csrf @method('DELETE')
                                     <button class="btn btn-light btn-sm text-danger shadow-sm border ms-1" title="Xóa">

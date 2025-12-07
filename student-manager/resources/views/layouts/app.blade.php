@@ -12,23 +12,17 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
     <style>
-        /* CSS TÙY CHỈNH CHO GIAO DIỆN ĐẸP */
-        html, body { height: 100%; } /* Bắt buộc full chiều cao */
+        /* CSS TÙY CHỈNH */
+        html, body { height: 100%; }
         body { 
             background-color: #f8f9fa; 
             display: flex; 
-            flex-direction: column; /* Đẩy footer xuống đáy */
+            flex-direction: column; 
         }
-        
-        /* Navbar đẹp hơn */
         .navbar-brand { font-weight: 800; font-size: 1.4rem; color: #0d6efd !important; letter-spacing: 0.5px; }
         .nav-link { font-weight: 500; font-size: 0.95rem; }
         .nav-link.active { color: #0d6efd !important; font-weight: 700; border-bottom: 2px solid #0d6efd; }
-        
-        /* Main Content giãn nở */
         main { flex: 1; }
-
-        /* Footer */
         .animate-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
@@ -81,9 +75,7 @@
 
                     <ul class="navbar-nav ms-auto align-items-center">
                         @guest
-                            <li class="nav-item"><a class="btn btn-outline-primary btn-sm me-2 rounded-pill px-3" href="{{ route('login') }}">Đăng nhập</a></li>
-                            <li class="nav-item"><a class="btn btn-primary btn-sm rounded-pill px-3" href="{{ route('register') }}">Đăng ký</a></li>
-                        @else
+                            @else
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle fw-bold text-dark d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
                                     <div class="rounded-circle bg-light border d-flex justify-content-center align-items-center me-2 text-secondary fw-bold" 
@@ -103,6 +95,12 @@
                                         </span>
                                     </div>
                                     
+                                    <a class="dropdown-item py-2" href="{{ route('profile.edit') }}">
+                                        <i class="fas fa-id-card me-2 text-secondary"></i> Hồ sơ cá nhân
+                                    </a>
+                                    
+                                    <div class="dropdown-divider"></div>
+
                                     <a class="dropdown-item text-danger py-2" href="{{ route('logout') }}"
                                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất

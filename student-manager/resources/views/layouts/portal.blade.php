@@ -12,18 +12,14 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
     <style>
-        /* 1. CHỈNH CỠ CHỮ TỔNG THỂ (COMPACT BASE SIZE: 0.9rem) */
-        body { background-color: #f3f4f6; font-size: 0.9rem; } 
-        
-        /* FIX CHỮ BÉ TRONG Ô INPUT/SELECT (Giữ nguyên 1rem để dễ gõ) */
-        .form-control, .form-select, .btn {
-            font-size: 1rem !important; 
-        }
+        /* 1. CỠ CHỮ TỔNG THỂ */
+        body { background-color: #f8f9fa; font-size: 0.95rem; } 
+        .form-control, .form-select, .btn { font-size: 1rem !important; }
 
         /* Sidebar Styles */
         .sidebar {
             min-height: 100vh;
-            background: #212529;
+            background: #212529; /* Màu tối */
             color: #adb5bd;
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
@@ -37,24 +33,34 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        .sidebar nav a {
+        /* LINK MENU SIDEBAR */
+        .sidebar .nav-link {
             color: #adb5bd;
             text-decoration: none;
             padding: 12px 20px;
             display: block;
+            border-left: 4px solid transparent;
             border-bottom: 1px solid #2c3034;
-            transition: 0.2s;
+            transition: all 0.2s ease-in-out;
             font-weight: 500;
-            font-size: 0.9rem; /* Chữ menu đồng bộ */
+            font-size: 0.95rem;
         }
 
-        .sidebar nav a:hover, .sidebar nav a.active {
-            background: #0d6efd;
+        /* Hover Effect */
+        .sidebar .nav-link:hover {
+            background-color: #343a40;
             color: #fff;
             padding-left: 25px;
         }
+
+        /* Active State (Quan trọng) */
+        .sidebar .nav-link.active {
+            background-color: #0d6efd; /* Màu xanh */
+            color: #fff;
+            border-left-color: #fff; /* Viền trắng bên trái */
+        }
         
-        .sidebar nav a i { margin-right: 12px; width: 20px; text-align: center; }
+        .sidebar .nav-link i { margin-right: 12px; width: 20px; text-align: center; }
 
         .nav-header {
             font-size: 0.75rem;
@@ -96,27 +102,39 @@
                 
                 <nav class="mt-2">
                     @auth
+                        {{-- === KHU VỰC SINH VIÊN === --}}
                         @if(Auth::user()->role == 0)
                             <div class="nav-header">Sinh viên</div>
                             <a href="{{ route('student.register') }}" 
-   class="{{ request()->routeIs('student.register') ? 'active' : '' }}"
-   style="font-size: 0.9rem;">  <i class="fas fa-edit"></i> Đăng ký môn học
-</a>
-                            <a href="{{ route('student.myClasses') }}" class="{{ request()->routeIs('student.myClasses') ? 'active' : '' }}"  style="font-size: 0.9rem;">
+                               class="nav-link {{ request()->routeIs('student.register') ? 'active' : '' }}">
+                                <i class="fas fa-edit"></i> Đăng ký môn học
+                            </a>
+                            <a href="{{ route('student.myClasses') }}" 
+                               class="nav-link {{ request()->routeIs('student.myClasses') ? 'active' : '' }}">
                                 <i class="fas fa-list-ul"></i> Lớp của tôi
                             </a>
                         @endif
 
+                        {{-- === KHU VỰC GIÁO VIÊN (ĐÃ FIX LOGIC ACTIVE) === --}}
                         @if(Auth::user()->role == 2)
                             <div class="nav-header">Giảng viên</div>
-                            <a href="{{ route('teacher.classes') }}" class="{{ request()->routeIs('teacher.*') ? 'active' : '' }}">
+                            
+                            <a href="{{ route('teacher.dashboard') }}" 
+                               class="nav-link {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}">
+                                <i class="fas fa-chart-pie"></i> Tổng quan
+                            </a>
+
+                            <a href="{{ route('teacher.classes') }}" 
+                               class="nav-link {{ request()->routeIs('teacher.classes') || request()->routeIs('teacher.class.*') ? 'active' : '' }}">
                                 <i class="fas fa-chalkboard-teacher"></i> Lớp giảng dạy
                             </a>
                         @endif
+
+                       
                     @endauth
 
                     <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" 
-                       class="text-danger mt-3" style="border-top: 1px solid #343a40;">
+                       class="nav-link text-danger mt-3" style="border-top: 1px solid #343a40;">
                         <i class="fas fa-sign-out-alt"></i> Đăng xuất
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
@@ -133,14 +151,10 @@
                         </span>
                     </div>
 
-                      <div class="dropdown">
+                    <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" data-bs-toggle="dropdown">
                             <div class="text-end me-3 d-none d-sm-block">
                                 <div class="fw-bold" style="font-size: 0.95rem;">{{ Auth::user()->name }}</div>
-                              <div class="text-muted small text-center">Student</div>
-                              
-
-
                             </div>
                             
                             @if(Auth::user()->avatar)
@@ -156,6 +170,12 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end border-0 shadow mt-2">
                             <li>
+                                <a class="dropdown-item py-2" href="{{ route('profile.edit') }}">
+                                    <i class="fas fa-user-circle me-2 text-primary"></i> Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
                                 <a class="dropdown-item text-danger py-2" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
                                 </a>
@@ -168,20 +188,19 @@
                     @yield('content')
                 </div>
 
-               <footer class="bg-white border-top py-2 mt-auto">
-    <div class="container-fluid px-4">
-        <div class="row align-items-center" style="font-size: 0.85rem;">
-            <div class="col-md-6 text-center text-md-start text-muted">
-                Copyright &copy; {{ date('Y') }} <strong>Student Management System</strong>.
-            </div>
-            <div class="col-md-6 text-center text-md-end text-muted">
-                Version 2.0 <span class="mx-2">|</span> 
-                Made with <i class="fas fa-heart text-danger animate-pulse mx-1"></i> by <strong>Fresher Team</strong>
-            </div>
-        </div>
-    </div>
-</footer>
-
+                <footer class="bg-white border-top py-2 mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="row align-items-center" style="font-size: 0.85rem;">
+                            <div class="col-md-6 text-center text-md-start text-muted">
+                                Copyright &copy; {{ date('Y') }} <strong>Student Management System</strong>.
+                            </div>
+                            <div class="col-md-6 text-center text-md-end text-muted">
+                                Version 2.0 <span class="mx-2">|</span> 
+                                Made with <i class="fas fa-heart text-danger animate-pulse mx-1"></i> by <strong>Fresher Team</strong>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
 
             </div> </div>
     </div>

@@ -12,27 +12,29 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable(); // [MAX PING] Thêm dòng này để chuẩn Auth Laravel
             $table->string('password');
+            $table->rememberToken(); // Di chuyển lên đây cho đúng chuẩn Laravel (tùy chọn)
             
-            // Các cột custom
+            // --- Custom Columns ---
             $table->tinyInteger('role')->default(0)->comment('0:SV, 1:Admin, 2:GV');
             $table->string('code', 20)->nullable()->unique();
+            
+            // Profile Info
             $table->date('birthday')->nullable();
-            // Lưu ý: DBML ghi gender cho phép null, ở đây bạn để default(1). 
-            // Tôi giữ nguyên theo code của bạn vì nó hợp lý hơn.
-            $table->tinyInteger('gender')->default(1);
+            $table->tinyInteger('gender')->default(1); // Giữ default(1) theo ý bạn
             $table->string('phone', 15)->nullable();
             $table->text('address')->nullable();
             $table->string('avatar')->nullable();
+            
             $table->tinyInteger('status')->default(1);
             
-            // Soft Delete & Timestamps (Đã chuẩn)
+            // Soft Delete & Timestamps
             $table->softDeletes(); 
-            $table->rememberToken();
             $table->timestamps();
         });
 
-        // Các bảng mặc định cần thiết của Laravel
+        // Các bảng mặc định (Giữ nguyên)
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
