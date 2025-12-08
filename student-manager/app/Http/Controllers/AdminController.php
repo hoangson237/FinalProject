@@ -9,57 +9,40 @@ use App\Models\Registration;
 
 class AdminController extends Controller
 {
-    // --- MODULE 1: DASHBOARD (OVERVIEW) ---
+    // --- MODULE 1: DASHBOARD ---
     public function index()
     {
-        // 1. Stats for dashboard cards
         $stats = [
             'students' => User::where('role', 0)->count(),
             'teachers' => User::where('role', 2)->count(),
             'classes'  => Classroom::count(),
         ];
 
-        // 2. Get 5 latest registrations
         $recent_registrations = Registration::with(['student', 'classroom'])
-                                ->latest()
-                                ->take(5)
-                                ->get();
+                                        ->latest()->take(5)->get();
 
         return view('admin.dashboard', compact('stats', 'recent_registrations'));
     }
 
-    // --- MODULE 2: CLASSROOM MANAGEMENT (CRUD) ---
+    // --- MODULE 2: QUẢN LÝ LỚP HỌC ---
 
-    // List Classes (with Filtering)
+    // Danh sách lớp
     public function classList(Request $request)
     {
         $query = Classroom::with('teacher');
 
-        // Filter by Keyword
         if ($request->has('keyword') && $request->keyword != '') {
             $query->where('name', 'LIKE', "%{$request->keyword}%");
         }
-
-        // Filter by Teacher
         if ($request->has('teacher_id') && $request->teacher_id != '') {
             $query->where('teacher_id', $request->teacher_id);
         }
-
-        // 🔥 FIX: SMART STATUS FILTER LOGIC 🔥
         if ($request->has('status') && $request->status != '') {
-            
             if ($request->status == '1') {
-                // FILTER: "OPEN"
-                // Condition: Status is 1 AND Current Quantity < Max Quantity
-                $query->where('status', 1)
-                      ->whereColumn('current_quantity', '<', 'max_quantity');
-            } 
-            elseif ($request->status == '0') {
-                // FILTER: "CLOSED"
-                // Condition: Status is 0 OR Current Quantity >= Max Quantity (Full)
+                $query->where('status', 1)->whereColumn('current_quantity', '<', 'max_quantity');
+            } elseif ($request->status == '0') {
                 $query->where(function($q) {
-                    $q->where('status', 0)
-                      ->orWhereColumn('current_quantity', '>=', 'max_quantity');
+                    $q->where('status', 0)->orWhereColumn('current_quantity', '>=', 'max_quantity');
                 });
             }
         }
@@ -70,45 +53,66 @@ class AdminController extends Controller
         return view('admin.classes.index', compact('classrooms', 'teachers'));
     }
 
-    // Show Create Form
+    // Form thêm mới
     public function create()
     {
         $teachers = User::where('role', 2)->get(); 
-        return view('admin.create', compact('teachers')); // Ensure this view exists, usually admin.classes.create
+        if (view()->exists('admin.classes.create')) {
+            return view('admin.classes.create', compact('teachers'));
+        }
+        return view('admin.create', compact('teachers'));
     }
 
-    // Store New Class
+    // --- HÀM LƯU MỚI (STORE) ---
     public function store(Request $request)
     {
+        // 1. Validate
         $request->validate([
             'name' => 'required',
             'teacher_id' => 'required|exists:users,id',
-            'max_quantity' => 'required|integer|min:1|max:20' 
+            'max_quantity' => 'required|integer|min:1|max:50', // Chặn backend Max 50
+            'start_date' => 'required|date',
+            'days' => 'required|array|min:1', // Bắt buộc chọn ít nhất 1 ngày
+            'shift' => 'required|string',
+            'room' => 'required|string',
         ], [
-            'max_quantity.max' => 'Sĩ số lớp không được vượt quá 20 người!'
+            'days.required' => 'Vui lòng chọn ít nhất 1 ngày học.',
+            'max_quantity.max' => 'Sĩ số lớp tối đa là 50 sinh viên.',
+            'room.required' => 'Vui lòng chọn phòng học.',
         ]);
 
+        // 2. Ghép chuỗi Lịch học (VD: "T2, T4, T6 (Ca 1)")
+        // Hàm implode sẽ nối mảng ['T2', 'T4'] thành chuỗi "T2, T4"
+        $daysString = implode(', ', $request->days);
+        $finalSchedule = $daysString . ' (' . $request->shift . ')';
+
+        // 3. Lưu vào DB
         Classroom::create([
             'name' => $request->name,
             'teacher_id' => $request->teacher_id,
             'max_quantity' => $request->max_quantity,
             'current_quantity' => 0,
-            'status' => 1
+            'status' => 1,
+            'start_date' => $request->start_date,
+            'schedule'   => $finalSchedule, // Lưu chuỗi đã ghép
+            'room'       => $request->room,
         ]);
 
         return redirect()->route('admin.classes.index')->with('success', 'Đã tạo lớp học thành công!');
     }
 
-    // Show Edit Form
+    // Form sửa
     public function edit($id)
     {
         $class = Classroom::findOrFail($id);
         $teachers = User::where('role', 2)->get();
-        // Assuming your edit view is located at admin.classes.edit based on previous context
-        return view('admin.classes.edit', compact('class', 'teachers')); 
+        if (view()->exists('admin.classes.edit')) {
+            return view('admin.classes.edit', compact('class', 'teachers'));
+        }
+        return view('admin.edit', compact('class', 'teachers'));
     }
 
-    // Update Class
+    // --- HÀM CẬP NHẬT (UPDATE) ---
     public function update(Request $request, $id)
     {
         $class = Classroom::findOrFail($id);
@@ -116,42 +120,78 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required',
             'teacher_id' => 'required|exists:users,id',
-            'max_quantity' => 'required|integer|min:1|max:20',
+            'max_quantity' => 'required|integer|min:1|max:50', // Chặn backend Max 50
             'status' => 'required',
+            'start_date' => 'required|date',
+            'days' => 'required|array|min:1', 
+            'shift' => 'required|string',
+            'room' => 'required|string',
         ], [
-            'max_quantity.max' => 'Sĩ số lớp không được vượt quá 20 người!'
+            'days.required' => 'Vui lòng chọn ít nhất 1 ngày học.',
+            'max_quantity.max' => 'Sĩ số lớp tối đa là 50 sinh viên.',
         ]);
 
-        // 🔥 LOGIC CHECK: PREVENT OPENING FULL CLASSES 🔥
+        // Check Logic Lớp đầy
         $newMaxQty = $request->max_quantity;
-        $currentQty = $class->current_quantity;
         $newStatus = $request->status;
-
-        // If trying to set status to OPEN (1) but class is FULL
-        if ($newStatus == 1 && $currentQty >= $newMaxQty) {
-            // Force status to CLOSED (0) or redirect back with error
-            // Here we force close it to match the UI behavior
+        if ($newStatus == 1 && $class->current_quantity >= $newMaxQty) {
             $newStatus = 0; 
-            
-            // Optional: You could redirect back with an error instead:
-            // return back()->withErrors(['status' => 'Không thể mở lớp vì sĩ số đã đầy. Vui lòng tăng sĩ số tối đa.']);
         }
+
+        // Ghép chuỗi Lịch học
+        $daysString = implode(', ', $request->days);
+        $finalSchedule = $daysString . ' (' . $request->shift . ')';
 
         $class->update([
             'name' => $request->name,
             'teacher_id' => $request->teacher_id,
             'max_quantity' => $newMaxQty,
             'status' => $newStatus, 
+            'start_date' => $request->start_date,
+            'schedule'   => $finalSchedule,
+            'room'       => $request->room,
         ]);
 
         return redirect()->route('admin.classes.index')->with('success', 'Cập nhật lớp học thành công!');
     }
 
-    // Delete Class
+    // --- KHU VỰC SOFT DELETE ---
+
+    // 1. Xóa mềm (Hàm destroy cũ của bạn đã OK rồi, chỉ cần giữ nguyên)
     public function destroy($id)
     {
         $class = Classroom::findOrFail($id);
         $class->delete();
-        return back()->with('success', 'Đã xóa lớp học!');
+        return back()->with('success', 'Đã chuyển lớp học vào thùng rác!');
+    }
+
+    // 2. Xem thùng rác
+    public function trash()
+    {
+        $deletedClasses = Classroom::onlyTrashed()->with('teacher')->latest()->paginate(10);
+        // Đảm bảo file view tồn tại ở resources/views/admin/classes/trash.blade.php
+        return view('admin.classes.trash', compact('deletedClasses'));
+    }
+
+    // 3. Khôi phục
+    public function restore($id)
+    {
+        $class = Classroom::withTrashed()->findOrFail($id);
+        $class->restore(); 
+        
+        return redirect()->route('admin.classes.index')->with('success', 'Đã khôi phục lớp học thành công!');
+    }
+
+    // 4. Xóa vĩnh viễn
+    public function forceDelete($id)
+    {
+        $class = Classroom::withTrashed()->findOrFail($id);
+        
+        // Trước khi xóa vĩnh viễn, nên xóa sạch dữ liệu liên quan
+        $class->registrations()->delete(); 
+        
+        $class->forceDelete(); 
+
+        return back()->with('success', 'Đã xóa vĩnh viễn lớp học!');
     }
 }

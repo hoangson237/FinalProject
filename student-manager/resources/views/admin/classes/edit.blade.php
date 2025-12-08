@@ -5,111 +5,109 @@
     <div class="col-md-8">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold text-primary">
-                    <i class="fas fa-edit me-2"></i>Cập nhật Lớp học phần
-                </h5>
+                <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-edit me-2"></i>Cập nhật Lớp học phần</h5>
             </div>
             
             <div class="card-body p-4">
-                {{-- Form Sửa --}}
                 <form action="{{ route('admin.class.update', $class->id) }}" method="POST">
                     @csrf
                     @method('PUT')
 
-                    {{-- 1. Tên lớp --}}
+                    {{-- 1. Tên & GV --}}
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tên Lớp học</label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
-                               value="{{ old('name', $class->name) }}" required>
-                        @error('name')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <input type="text" name="name" class="form-control" value="{{ old('name', $class->name) }}" required>
                     </div>
 
-                    {{-- 2. Giáo viên --}}
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Giáo viên giảng dạy</label>
-                        <select name="teacher_id" class="form-select @error('teacher_id') is-invalid @enderror">
-                            <option value="">-- Chọn Giáo viên --</option>
+                        <label class="form-label fw-bold">Giáo viên</label>
+                        <select name="teacher_id" class="form-select">
                             @foreach($teachers as $gv)
-                                <option value="{{ $gv->id }}" {{ old('teacher_id', $class->teacher_id) == $gv->id ? 'selected' : '' }}>
-                                    {{ $gv->name }} ({{ $gv->code }})
+                                <option value="{{ $gv->id }}" {{ $class->teacher_id == $gv->id ? 'selected' : '' }}>
+                                    {{ $gv->name }} ({{ $gv->email }})
                                 </option>
                             @endforeach
                         </select>
-                        @error('teacher_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
 
-                    {{-- 3. Sĩ số tối đa --}}
+                    {{-- 3. Lịch học --}}
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Sĩ số tối đa (MAX)</label>
-                        <input type="number" name="max_quantity" class="form-control @error('max_quantity') is-invalid @enderror" 
-                               value="{{ old('max_quantity', $class->max_quantity) }}" min="1" required>
-                        <div class="form-text">Lưu ý: Sĩ số không được nhỏ hơn sĩ số hiện tại ({{ $class->current_quantity }}).</div>
-                        @error('max_quantity')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    {{-- 4. Trạng thái (LOGIC MỚI Ở ĐÂY) --}}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Trạng thái Lớp học</label>
-
-                        @php
-                            // Kiểm tra xem lớp có đầy không
-                            $isFull = $class->current_quantity >= $class->max_quantity;
-                        @endphp
-
-                        @if($isFull)
-                            {{-- TRƯỜNG HỢP 1: LỚP ĐẦY -> Disable Select và hiện cảnh báo --}}
-                            <div class="input-group">
-                                <span class="input-group-text bg-danger text-white"><i class="fas fa-ban"></i></span>
-                                <select class="form-select bg-light text-secondary" disabled>
-                                    <option selected>🔴 Đã đóng (Lớp đã đầy sĩ số)</option>
-                                </select>
-                            </div>
-                            
-                            {{-- Input ẩn để vẫn gửi giá trị 0 (Đóng) về server --}}
-                            <input type="hidden" name="status" value="0">
-
-                            <div class="alert alert-warning mt-2 d-flex align-items-center shadow-sm" role="alert">
-                                <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning"></i>
-                                <div>
-                                    <strong>Không thể mở lớp này!</strong><br>
-                                    Sĩ số hiện tại <strong>({{ $class->current_quantity }}/{{ $class->max_quantity }})</strong> đã đầy. 
-                                    Vui lòng tăng "Sĩ số tối đa" ở trên trước nếu muốn mở lại lớp.
+                        <label class="form-label fw-bold">Lịch học chi tiết</label>
+                        <div class="card p-3 bg-light border-0">
+                            <div class="row">
+                                <div class="col-md-7">
+                                    <label class="small fw-bold text-muted mb-2">Ngày trong tuần:</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach(['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] as $day)
+                                            @php 
+                                                $isChecked = str_contains($class->schedule, $day); 
+                                            @endphp
+                                            <input type="checkbox" class="btn-check" name="days[]" id="editBtn{{$day}}" value="{{$day}}" 
+                                                {{ $isChecked ? 'checked' : '' }}>
+                                            <label class="btn btn-outline-primary bg-white" for="editBtn{{$day}}">{{$day}}</label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="small fw-bold text-muted mb-2">Ca học:</label>
+                                    <select name="shift" class="form-select bg-white" required>
+                                        <option value="Ca 1 (7h - 9h)" {{ str_contains($class->schedule, 'Ca 1') ? 'selected' : '' }}>Ca 1 (7h - 9h)</option>
+                                        <option value="Ca 2 (9h - 11h)" {{ str_contains($class->schedule, 'Ca 2') ? 'selected' : '' }}>Ca 2 (9h - 11h)</option>
+                                        <option value="Ca 3 (12h - 14h)" {{ str_contains($class->schedule, 'Ca 3') ? 'selected' : '' }}>Ca 3 (12h - 14h)</option>
+                                        <option value="Ca 4 (14h - 16h)" {{ str_contains($class->schedule, 'Ca 4') ? 'selected' : '' }}>Ca 4 (14h - 16h)</option>
+                                        <option value="Ca Tối (18h - 21h)" {{ str_contains($class->schedule, 'Ca Tối') ? 'selected' : '' }}>Ca Tối (18h - 21h)</option>
+                                    </select>
                                 </div>
                             </div>
-                        @else
-                            {{-- TRƯỜNG HỢP 2: CÒN CHỖ -> Cho phép chọn bình thường --}}
-                            <select name="status" class="form-select @error('status') is-invalid @enderror">
-                                <option value="1" {{ old('status', $class->status) == 1 ? 'selected' : '' }}>
-                                    🟢 Đang mở (Cho phép đăng ký)
-                                </option>
-                                <option value="0" {{ old('status', $class->status) == 0 ? 'selected' : '' }}>
-                                    🔴 Đóng lớp (Ngưng tuyển sinh)
-                                </option>
-                            </select>
-                            <div class="form-text text-muted">
-                                Nếu đóng, sinh viên sẽ không thấy nút đăng ký nữa.
-                            </div>
-                        @endif
-
-                        @error('status')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        </div>
                     </div>
 
-                    {{-- Nút bấm --}}
+                    {{-- 4. Phòng - Ngày - Sĩ số --}}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Phòng học</label>
+                            <select name="room" class="form-select" required>
+                                @foreach(['Phòng A101 (Tòa A)', 'Phòng A102 (Tòa A)', 'Phòng Lab 1 (Thực hành)', 'Phòng Lab 2 (Thực hành)', 'Hội trường B'] as $r)
+                                    <option value="{{ $r }}" {{ str_contains($class->room, $r) ? 'selected' : '' }}>{{ $r }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Ngày bắt đầu</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ $class->start_date }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Sĩ số tối đa</label>
+                            <div class="input-group">
+                                <input type="number" name="max_quantity" class="form-control" 
+                                       value="{{ $class->max_quantity }}" min="1" max="50">
+                                <span class="input-group-text text-muted">Max: 50</span>
+                            </div>
+                            <div class="form-text">Hiện tại: {{ $class->current_quantity }} SV.</div>
+                        </div>
+                    </div>
+
+                    {{-- 5. Trạng thái --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Trạng thái</label>
+                        @php $isFull = $class->current_quantity >= $class->max_quantity; @endphp
+                        @if($isFull)
+                            <div class="input-group">
+                                <span class="input-group-text bg-danger text-white"><i class="fas fa-ban"></i></span>
+                                <select class="form-select bg-light" disabled><option>🔴 Đã đóng (Full)</option></select>
+                            </div>
+                            <input type="hidden" name="status" value="0">
+                        @else
+                            <select name="status" class="form-select">
+                                <option value="1" {{ $class->status == 1 ? 'selected' : '' }}>🟢 Đang mở</option>
+                                <option value="0" {{ $class->status == 0 ? 'selected' : '' }}>🔴 Đóng lớp</option>
+                            </select>
+                        @endif
+                    </div>
+
                     <div class="d-flex justify-content-end gap-2 border-top pt-3">
-                        <a href="{{ route('admin.classes.index') }}" class="btn btn-secondary px-4">
-                            <i class="fas fa-arrow-left me-1"></i> Quay lại
-                        </a>
-                        <button type="submit" class="btn btn-warning px-4 fw-bold shadow-sm">
-                            <i class="fas fa-save me-1"></i> Cập nhật
-                        </button>
+                        <a href="{{ route('admin.classes.index') }}" class="btn btn-secondary px-4">Quay lại</a>
+                        <button type="submit" class="btn btn-warning px-4 fw-bold">Cập nhật</button>
                     </div>
                 </form>
             </div>

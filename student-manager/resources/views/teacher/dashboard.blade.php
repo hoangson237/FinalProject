@@ -3,6 +3,15 @@
 @section('content')
 <div class="container py-4">
     
+    {{-- [MỚI] 1. KHỐI HIỂN THỊ THÔNG BÁO THÀNH CÔNG --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4">
+            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    {{-- ------------------------------------------------ --}}
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-0">Khu vực Giảng dạy</h2>

@@ -9,110 +9,107 @@ use App\Models\Registration;
 
 class TeacherController extends Controller
 {
-    // ... (Các hàm dashboard, index, show giữ nguyên) ...
-
+    // --- 1. DASHBOARD (Trang tổng quan) ---
     public function dashboard()
     {
         $teacher_id = Auth::id();
+        
+        // Lấy danh sách ID các lớp giáo viên này dạy
         $myClassIds = Classroom::where('teacher_id', $teacher_id)->pluck('id');
 
+        // Thống kê
         $stats = [
-            'count_classes' => $myClassIds->count(),
-            'count_students' => Registration::whereIn('classroom_id', $myClassIds)->whereHas('student')->count(),
-            'count_graded' => Registration::whereIn('classroom_id', $myClassIds)->whereHas('student')->whereNotNull('score')->count(),
+            'count_classes'  => $myClassIds->count(),
+            'count_students' => Registration::whereIn('classroom_id', $myClassIds)->count(),
+            'count_graded'   => Registration::whereIn('classroom_id', $myClassIds)->whereNotNull('score')->count(),
         ];
 
+        // Lấy hoạt động gần đây (Sinh viên mới đăng ký vào lớp của mình)
         $recent_activities = Registration::with(['student', 'classroom'])
             ->whereIn('classroom_id', $myClassIds)
-            ->whereHas('student')
             ->latest()
             ->take(5)
             ->get();
 
+        // Trả về view Dashboard
         return view('teacher.dashboard', compact('stats', 'recent_activities'));
     }
 
+    // --- 2. DANH SÁCH LỚP GIẢNG DẠY ---
     public function index()
     {
         $classes = Classroom::where('teacher_id', Auth::id())
-            ->withCount(['registrations' => function($query) {
-                $query->whereHas('student');
-            }])
+            ->withCount('registrations') // Đếm tổng sinh viên
             ->latest()
             ->paginate(9);
 
         return view('teacher.index', compact('classes'));
     }
 
+    // --- 3. CHI TIẾT LỚP HỌC ---
     public function show($id)
     {
-        $class = Classroom::with(['registrations' => function($query) {
-                $query->whereHas('student');
-            }, 'registrations.student'])
+        $class = Classroom::with(['registrations.student'])
             ->where('teacher_id', Auth::id()) 
             ->findOrFail($id);
 
         return view('teacher.show', compact('class'));
     }
 
-    // --- CẬP NHẬT ĐIỂM SỐ (QUAN TRỌNG: Xử lý Highlight) ---
+    // --- 4. CẬP NHẬT ĐIỂM SỐ ---
     public function updateScore(Request $request, $registration_id)
     {
         $request->validate([
-            'score' => 'nullable|numeric|min:0|max:10' // Cho phép null để "Chấm lại"
+            'score' => 'required|numeric|min:0|max:10'
         ]);
 
         $reg = Registration::findOrFail($registration_id);
 
+        // Check quyền: Chỉ giáo viên của lớp đó mới được chấm
         if ($reg->classroom->teacher_id != Auth::id()) {
-            abort(403);
+            abort(403, 'Bạn không có quyền chấm điểm lớp này!');
         }
 
-        // Cập nhật điểm (nếu input score = 0 và logic là hủy thì set null, tùy logic bạn)
-        // Ở đây mình giữ nguyên logic update giá trị nhận được
         $reg->update(['score' => $request->score]);
 
-        // --- XỬ LÝ CHUYỂN HƯỚNG & HIGHLIGHT ---
-        
-        // Tạo Fragment (dấu thăng #reg-123) để frontend biết dòng nào cần tô màu
-        $fragment = 'reg-' . $reg->id;
-
-        // Nếu yêu cầu chuyển về trang danh sách (từ input hidden redirect_to)
-        if ($request->input('redirect_to') == 'students') {
-            return redirect()->route('teacher.students', [
-                'filter' => $request->score !== null ? 'graded' : null // Nếu có điểm thì về tab graded, không thì về chờ chấm
-            ])
-            ->with('success', 'Đã lưu điểm!')
-            ->withFragment($fragment); // <--- QUAN TRỌNG: Gắn đuôi #reg-ID
+        // Logic chuyển hướng thông minh
+        if ($request->has('redirect_to') && $request->redirect_to == 'students') {
+            return redirect()->route('teacher.students')
+                             ->with('success', 'Đã chấm điểm cho: ' . ($reg->student->name ?? 'SV'));
         }
 
-        return back()->with('success', 'Đã cập nhật điểm!')->withFragment($fragment);
+        return back()->with('success', 'Đã cập nhật điểm số!');
     }
 
-    // --- DANH SÁCH SINH VIÊN (Xử lý Sắp xếp) ---
-  public function studentList(Request $request)
+    // --- 5. DANH SÁCH TẤT CẢ SINH VIÊN (Có tìm kiếm) ---
+    public function studentList(Request $request)
     {
         $myClassIds = Classroom::where('teacher_id', Auth::id())->pluck('id');
+
         $query = Registration::with(['student', 'classroom'])
-                             ->whereIn('classroom_id', $myClassIds)
-                             ->whereHas('student'); 
+                             ->whereIn('classroom_id', $myClassIds);
 
-        // 1. Tab Đã Chấm (Bảng Vàng)
-        if ($request->has('filter') && $request->filter == 'graded') {
-            $query->whereNotNull('score');
-
-            // NÚT SORT: Chỉ xếp khi có request
-            if ($request->has('sort') && $request->sort == 'desc') {
-                $query->orderByDesc('score');
-            } else {
-                $query->latest('updated_at'); // Mặc định không xếp hạng
-            }
-        } else {
-            // 2. Tab Chờ Chấm
-            $query->latest(); 
+        // Tìm kiếm
+        if ($request->has('keyword') && $request->keyword != '') {
+            $keyword = $request->keyword;
+            $query->whereHas('student', function($q) use ($keyword) {
+                $q->where('name', 'LIKE', "%{$keyword}%")
+                  ->orWhere('code', 'LIKE', "%{$keyword}%");
+            });
         }
 
-        $students = $query->paginate(20)->withQueryString();
+        // Lọc điểm số
+        if ($request->has('filter') && $request->filter == 'graded') {
+            $query->whereNotNull('score');
+            if ($request->input('sort') == 'desc') {
+                $query->orderByDesc('score');
+            }
+        } else {
+            $query->latest();
+        }
+
+        $students = $query->paginate(10)->withQueryString();
+
         return view('teacher.students', compact('students'));
     }
 }

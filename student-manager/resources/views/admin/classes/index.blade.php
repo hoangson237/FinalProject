@@ -2,59 +2,54 @@
 
 @section('content')
 <div class="card shadow border-0">
-    {{-- Header và Nút Thêm mới --}}
+    {{-- Header --}}
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold text-primary" style="font-size: 1.25rem;">
             <i class="fas fa-chalkboard me-2"></i>Quản lý Lớp học phần
         </h5>
-        {{-- Nút thêm mới --}}
-        <a href="{{ route('admin.class.create') }}" class="btn btn-primary btn-sm shadow-sm" style="font-size: 1rem;">
-            <i class="fas fa-plus-circle me-1"></i> Thêm lớp mới
-        </a>
+        <div>
+            <a href="{{ route('admin.classes.trash') }}" class="btn btn-outline-danger btn-sm shadow-sm me-2" style="font-size: 1rem;">
+                <i class="fas fa-trash-alt me-1"></i> Thùng rác
+            </a>
+            <a href="{{ route('admin.class.create') }}" class="btn btn-primary btn-sm shadow-sm" style="font-size: 1rem;">
+                <i class="fas fa-plus-circle me-1"></i> Thêm lớp mới
+            </a>
+        </div>
     </div>
     
     <div class="card-body bg-light">
-        
-        {{-- Form Lọc Tìm kiếm --}}
+        {{-- Form Lọc (Giữ nguyên code cũ của bạn) --}}
         <form action="" method="GET" class="row g-3 mb-4 p-3 bg-white rounded shadow-sm mx-1">
             <div class="col-md-4">
-                <input type="text" name="keyword" class="form-control" 
-                       placeholder="Tên lớp học..." value="{{ request('keyword') }}" style="font-size: 1rem;">
+                <input type="text" name="keyword" class="form-control" placeholder="Tên lớp học..." value="{{ request('keyword') }}">
             </div>
             <div class="col-md-3">
-                <select name="teacher_id" class="form-select" style="font-size: 1rem;">
+                <select name="teacher_id" class="form-select">
                     <option value="">-- Giáo viên --</option>
                     @foreach($teachers as $gv)
-                        <option value="{{ $gv->id }}" {{ request('teacher_id') == $gv->id ? 'selected' : '' }}>
-                            {{ $gv->name }}
-                        </option>
+                        <option value="{{ $gv->id }}" {{ request('teacher_id') == $gv->id ? 'selected' : '' }}>{{ $gv->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-3">
-                <select name="status" class="form-select" style="font-size: 1rem;">
+                <select name="status" class="form-select">
                     <option value="">-- Trạng thái --</option>
                     <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Đang mở</option>
                     <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Đã đóng</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-dark w-100 fw-bold" type="submit" style="font-size: 1rem;">Lọc</button>
+                <button class="btn btn-dark w-100 fw-bold" type="submit">Lọc</button>
             </div>
-            
-            {{-- Nút Xóa bộ lọc --}}
             @if(request('keyword') || request('teacher_id') || request('status'))
                 <div class="col-12 ps-3 mt-2">
-                    <a href="{{ route('admin.classes.index') }}" class="text-danger text-decoration-none" style="font-size: 0.9rem;">
-                        <i class="fas fa-times-circle me-1"></i> Xóa bộ lọc
-                    </a>
+                    <a href="{{ route('admin.classes.index') }}" class="text-danger text-decoration-none"><i class="fas fa-times-circle me-1"></i> Xóa bộ lọc</a>
                 </div>
             @endif
         </form>
 
-        {{-- Thông báo Success --}}
         @if(session('success')) 
-            <div class="alert alert-success alert-dismissible fade show shadow-sm" style="font-size: 1rem;">
+            <div class="alert alert-success alert-dismissible fade show shadow-sm">
                 <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div> 
@@ -66,121 +61,104 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr class="text-secondary text-uppercase">
-                            <th class="text-center" width="50" style="font-size: 0.9rem;">ID</th>
-                            <th class="ps-4" style="font-size: 0.9rem;">Tên Lớp học</th>
-                            <th style="font-size: 0.9rem;">Giáo viên phụ trách</th>
-                            <th class="text-center" style="font-size: 0.9rem;">Sĩ số</th>
-                            <th class="text-center" style="font-size: 0.9rem;">Trạng thái</th>
-                            <th class="text-center" style="font-size: 0.9rem;">Hành động</th>
+                            <th class="text-center" width="50">ID</th>
+                            <th class="ps-4">Tên Lớp học</th>
+                            <th>Giáo viên phụ trách</th>
+                            <th class="text-center">Sĩ số</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-center">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($classrooms as $class)
                         <tr>
-                            <td class="text-center fw-bold text-secondary" style="font-size: 1.1rem;">{{ $class->id }}</td>
-                            
-                            <td class="ps-4">
-                                <span class="fw-bold text-dark" style="font-size: 1.1rem;">{{ $class->name }}</span>
-                            </td>
-
+                            <td class="text-center fw-bold text-secondary">{{ $class->id }}</td>
+                            <td class="ps-4"><span class="fw-bold text-dark">{{ $class->name }}</span></td>
                             <td>
                                 @if($class->teacher)
                                     <div class="d-flex align-items-center">
-                                        {{-- Hiển thị Avatar GV --}}
+                                        {{-- Logic hiển thị Avatar (Giữ nguyên) --}}
                                         @if($class->teacher->avatar)
-                                            <img src="{{ asset('storage/' . $class->teacher->avatar) }}" 
-                                                 alt="{{ $class->teacher->name }}"
-                                                 class="rounded-circle me-2 border shadow-sm"
-                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                            <img src="{{ asset('storage/' . $class->teacher->avatar) }}" class="rounded-circle me-2 border shadow-sm" style="width: 35px; height: 35px; object-fit: cover;">
                                         @else
-                                            <div class="rounded-circle bg-light d-flex justify-content-center align-items-center me-2 text-primary fw-bold border" 
-                                                 style="width: 40px; height: 40px; font-size: 1.2rem;">
-                                                {{ substr($class->teacher->name, 0, 1) }}
-                                            </div>
+                                            <div class="rounded-circle bg-light d-flex justify-content-center align-items-center me-2 text-primary fw-bold border" style="width: 35px; height: 35px;">{{ substr($class->teacher->name, 0, 1) }}</div>
                                         @endif
-
-                                        <div>
-                                            <div class="fw-bold text-dark" style="font-size: 1rem;">{{ $class->teacher->name }}</div>
-                                            <div class="text-muted" style="font-size: 0.9rem;">{{ $class->teacher->email }}</div>
-                                        </div>
+                                        <div><div class="fw-bold text-dark" style="font-size: 0.9rem;">{{ $class->teacher->name }}</div></div>
                                     </div>
                                 @else
-                                    <span class="badge bg-danger-subtle text-danger" style="font-size: 0.9rem;">Chưa gán</span>
+                                    <span class="badge bg-danger-subtle text-danger">Chưa gán</span>
                                 @endif
                             </td>
                             
-                            {{-- Cột Sĩ số (Thanh Progress bar) --}}
-                            <td class="text-center" style="width: 200px;">
+                            {{-- Cột Sĩ số --}}
+                            <td class="text-center" style="width: 150px;">
                                 @php 
                                     $percent = ($class->max_quantity > 0) ? ($class->current_quantity / $class->max_quantity) * 100 : 100;
                                     $color = $percent >= 100 ? 'bg-danger' : ($percent >= 80 ? 'bg-warning' : 'bg-success');
                                 @endphp
                                 <div class="d-flex justify-content-between small mb-1">
-                                    <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ $class->current_quantity }}</span>
-                                    <span class="text-muted" style="font-size: 0.9rem;">/ {{ $class->max_quantity }}</span>
+                                    <span class="fw-bold">{{ $class->current_quantity }}</span><span class="text-muted">/ {{ $class->max_quantity }}</span>
                                 </div>
-                                <div class="progress" style="height: 8px;">
+                                <div class="progress" style="height: 6px;">
                                     <div class="progress-bar {{ $color }}" style="width: {{ $percent }}%"></div>
                                 </div>
                             </td>
 
-                            {{-- 👇 CỘT TRẠNG THÁI (ĐÃ SỬA LOGIC) --}}
+                            {{-- Cột Trạng thái --}}
                             <td class="text-center">
                                 @if($class->current_quantity >= $class->max_quantity)
-                                    {{-- 1. Nếu sĩ số hiện tại >= Max -> Bắt buộc hiện Đã đầy (Đỏ) --}}
-                                    <span class="badge bg-danger rounded-pill px-3" style="font-size: 0.9rem;">
-                                        <i class="fas fa-ban me-1"></i> Đã đầy
-                                    </span>
+                                    <span class="badge bg-danger rounded-pill">Đã đầy</span>
                                 @elseif($class->status == 1)
-                                    {{-- 2. Nếu chưa đầy và status = 1 -> Hiện Mở (Xanh) --}}
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3" style="font-size: 0.9rem;">
-                                        Mở
-                                    </span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Mở</span>
                                 @else
-                                    {{-- 3. Các trường hợp còn lại -> Đóng (Xám) --}}
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3" style="font-size: 0.9rem;">
-                                        Đóng
-                                    </span>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đóng</span>
                                 @endif
                             </td>
                             
-                            {{-- Cột Hành động --}}
+                            {{-- Cột Hành động (CÓ MODAL) --}}
                             <td class="text-center">
                                 <a href="{{ route('admin.class.edit', $class->id) }}" class="btn btn-light btn-sm text-primary shadow-sm border" title="Sửa">
-                                    <i class="fas fa-edit fa-lg"></i>
+                                    <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('admin.class.destroy', $class->id) }}" method="POST" class="d-inline" onsubmit="return confirm('CẢNH BÁO: Xóa lớp sẽ xóa hết đăng ký của SV!\nBạn chắc chắn chứ?');">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-light btn-sm text-danger shadow-sm border ms-1" title="Xóa">
-                                        <i class="fas fa-trash fa-lg"></i>
-                                    </button>
-                                </form>
+                                
+                                {{-- Nút Mở Modal Xóa Mềm --}}
+                                <button type="button" class="btn btn-light btn-sm text-danger shadow-sm border ms-1" 
+                                        data-bs-toggle="modal" data-bs-target="#softDeleteModal-{{ $class->id }}" title="Xóa">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+                                {{-- === MODAL XÓA MỀM === --}}
+                                <div class="modal fade" id="softDeleteModal-{{ $class->id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                                        <div class="modal-content border-0 shadow">
+                                            <div class="modal-body text-center p-4">
+                                                <div class="text-warning mb-3"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+                                                <h5 class="fw-bold mb-2">Chuyển vào thùng rác?</h5>
+                                                <p class="text-muted small mb-4">Lớp <strong>{{ $class->name }}</strong> sẽ bị ẩn đi nhưng có thể khôi phục lại sau.</p>
+                                                <div class="d-flex justify-content-center gap-2">
+                                                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Hủy</button>
+                                                    <form action="{{ route('admin.class.destroy', $class->id) }}" method="POST">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="btn btn-warning text-white btn-sm px-3 fw-bold">Đồng ý</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- === END MODAL === --}}
                             </td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-5" style="font-size: 1.2rem;">
-                                <i class="fas fa-folder-open fa-3x mb-3 opacity-25"></i><br>
-                                Không tìm thấy lớp học nào.
-                            </td>
-                        </tr>
+                        <tr><td colspan="6" class="text-center text-muted py-5">Không tìm thấy lớp học nào.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
         
-        {{-- Phân trang --}}
         <div class="card-footer bg-white py-3 border-top-0">
-            <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
-                <div class="text-muted" style="font-size: 1rem;">
-                    Hiển thị <strong>{{ $classrooms->firstItem() }}</strong> - <strong>{{ $classrooms->lastItem() }}</strong> 
-                    / <strong>{{ $classrooms->total() }}</strong> kết quả
-                </div>
-                <div>
-                    {{ $classrooms->appends(request()->query())->links('pagination.admin') }}
-                </div>
-            </div>
+            {{ $classrooms->appends(request()->query())->links() }}
         </div>
     </div>
 </div>

@@ -3,44 +3,139 @@
 <?php $__env->startSection('content'); ?>
 <div class="container" style="max-width: 600px;">
     <div class="card shadow border-0">
+        
         <div class="card-header bg-success text-white py-3">
-            <h5>✏️ Cập nhật thông tin Giáo viên</h5>
+            <h5 class="mb-0 fw-bold"><i class="fas fa-user-edit me-2"></i>Cập nhật thông tin Giáo viên</h5>
         </div>
         
-        <div class="card-body">
+        <div class="card-body p-4">
+            
+            
+            <?php if($errors->any()): ?>
+                <div class="alert alert-danger border-0 shadow-sm mb-4">
+                    <ul class="mb-0 ps-3">
+                        <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <li><?php echo e($error); ?></li>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
             <form action="<?php echo e(route('admin.teachers.update', $teacher->id)); ?>" method="POST" enctype="multipart/form-data">
                 <?php echo csrf_field(); ?>
                 <?php echo method_field('PUT'); ?>
                 
+                
                 <div class="mb-3">
-                    <label>Mã Giáo viên</label>
-                    <input type="text" name="code" class="form-control" value="<?php echo e($teacher->code); ?>" required>
+                    <label class="form-label fw-bold">Mã Giáo viên <span class="text-danger">*</span></label>
+                    <input type="text" name="code" class="form-control <?php $__errorArgs = ['code'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                           value="<?php echo e(old('code', $teacher->code)); ?>" required>
+                    <?php $__errorArgs = ['code'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <div class="invalid-feedback"><?php echo e($message); ?></div> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
+                
                 <div class="mb-3">
-                    <label>Họ tên</label>
-                    <input type="text" name="name" class="form-control" value="<?php echo e($teacher->name); ?>" required>
+                    <label class="form-label fw-bold">Họ tên <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                           value="<?php echo e(old('name', $teacher->name)); ?>" required>
+                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <div class="invalid-feedback"><?php echo e($message); ?></div> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
+                
                 <div class="mb-3">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" value="<?php echo e($teacher->email); ?>" required>
+                    <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                    <input type="email" name="email" class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
+                           value="<?php echo e(old('email', $teacher->email)); ?>" required>
+                    <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <div class="invalid-feedback"><?php echo e($message); ?></div> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
+                
                 <div class="mb-3">
-                    <label>Ảnh đại diện</label>
+                    <label class="form-label fw-bold">Ảnh đại diện</label>
+                    
                     <?php if($teacher->avatar): ?>
-                        <div class="my-2">
-                            <img src="<?php echo e(asset('storage/'.$teacher->avatar)); ?>" class="rounded-circle border" width="80" height="80">
-                            <br><small class="text-muted">Ảnh hiện tại</small>
+                        <div class="d-flex align-items-center mb-2 p-2 border rounded bg-light">
+                            <img src="<?php echo e(asset('storage/'.$teacher->avatar)); ?>" 
+                                 class="rounded-circle border shadow-sm me-3" 
+                                 width="60" height="60" style="object-fit: cover;">
+                            <span class="text-muted small">Ảnh hiện tại</span>
                         </div>
                     <?php endif; ?>
-                    <input type="file" name="avatar" class="form-control">
+
+                    <input type="file" name="avatar" class="form-control <?php $__errorArgs = ['avatar'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                    
+                    <div class="form-text text-muted">Bỏ qua nếu không muốn thay đổi ảnh.</div>
+                    <?php $__errorArgs = ['avatar'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <div class="invalid-feedback"><?php echo e($message); ?></div> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
                 
-                <hr>
+                <hr class="my-4">
 
-                <button type="submit" class="btn btn-success w-100 fw-bold">Cập nhật thông tin</button>
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="<?php echo e(route('admin.teachers.index')); ?>" class="btn btn-secondary px-3">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại
+                    </a>
+                    
+                    <button type="submit" class="btn btn-success fw-bold px-3 shadow-sm">
+                        <i class="fas fa-save me-1"></i> Cập nhật thông tin
+                    </button>
+                </div>
             </form>
         </div>
     </div>

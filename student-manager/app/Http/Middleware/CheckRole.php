@@ -9,29 +9,27 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next, string $role): Response
     {
-        // 1. Nếu chưa đăng nhập -> Đá về trang Login
+        // 1. Chưa đăng nhập -> Về Login
         if (!Auth::check()) {
-            return redirect('login');
+            return redirect()->route('login');
         }
 
-        $userRole = Auth::user()->role;
+        $user = Auth::user();
 
-        // 2. Kiểm tra quyền (Chặn nếu sai quyền)
-        if ($role == 'admin' && $userRole != 1) {
-            abort(403, 'Bạn không có quyền truy cập trang Admin!');
-        }
+        // 2. Bảng quy đổi quyền (Mapping)
+        // Thay vì viết nhiều if, ta khai báo 1 mảng định nghĩa
+        $roleIds = [
+            'student' => 0,
+            'admin'   => 1,
+            'teacher' => 2,
+        ];
 
-        if ($role == 'teacher' && $userRole != 2) {
-            abort(403, 'Bạn không có quyền truy cập trang Giáo viên!');
-        }
-
-        if ($role == 'student' && $userRole != 0) {
-            abort(403, 'Bạn không có quyền truy cập trang Sinh viên!');
+        // 3. Kiểm tra logic (Gọn trong 1 nốt nhạc)
+        // Nếu role truyền vào không tồn tại trong bảng quy đổi HOẶC role của user không khớp
+        if (!isset($roleIds[$role]) || $user->role != $roleIds[$role]) {
+            abort(403, 'Bạn không có quyền truy cập trang này!');
         }
 
         return $next($request);

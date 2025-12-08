@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator; // <--- KHÔNG ĐƯỢC THIẾU DÒNG NÀY
+use Illuminate\Pagination\Paginator; // <--- Quan trọng: Import thư viện phân trang
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // DÒNG NÀY GIÚP PHÂN TRANG ĐẸP & NHỎ GỌN
-        Paginator::useBootstrapFive(); 
+        // Sử dụng Bootstrap 5 để hiển thị phân trang (Khắc phục lỗi giao diện vỡ)
+        Paginator::useBootstrapFive();
     }
 }
